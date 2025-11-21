@@ -24,6 +24,8 @@ public class MessageClass {
 
     // Primary storage of objects
     private final ArrayList<Message> sentMessages = new ArrayList<>();
+    private final ArrayList<Message> disregardedMessages = new ArrayList<>();
+    private final ArrayList<Message> storedMessages = new ArrayList<>();
 
     // Parallel arrays (rubric requirement)
     private final ArrayList<Long> messageIDs = new ArrayList<>();
@@ -41,13 +43,11 @@ public class MessageClass {
         ArrayList<Message> loaded = storage.loadMessages();
         if (!loaded.isEmpty()) {
             for (Message m : loaded) addMessageToMemory(m, false);
-            // messagesSentCount will be set by addMessageToMemory
         }
     }
 
     public void setMessageLimit(int limit) { this.messageLimit = limit; }
 
-    // Validate recipient e.g. +27xxxxxxxxx or 0xxxxxxxxx
     public boolean checkRecipientCell(String recipient) {
         if (recipient == null) return false;
         if (!(recipient.startsWith("+") || recipient.startsWith("0"))) return false;
@@ -57,10 +57,6 @@ public class MessageClass {
 
     private String sanitizeWord(String w) { return w == null ? "" : w.replaceAll("^\\W+|\\W+$", ""); }
 
-    /**
-     * Create message hash using parts of ID, messageNumber and first+last words of content.
-     * This uses substring and string manipulation as requested by the rubric.
-     */
     public String createMessageHash(long messageID, int messageNumber, String content) {
         String idStr = Long.toString(messageID);
         String firstTwo = idStr.length() >= 2 ? idStr.substring(0,2) : idStr;
@@ -70,24 +66,12 @@ public class MessageClass {
         return firstTwo + ":" + messageNumber + ":" + (firstWord + lastWord).toUpperCase();
     }
 
-    /**
-     * Generate a 10-digit-ish ID using currentTimeMillis + random and then substring.
-     * This demonstrates string manipulation followed by substring to meet rubric.
-     */
     private long generateTenDigitId() {
-        // base string from time + random
         String base = Long.toString(System.currentTimeMillis()) + Integer.toString(rand.nextInt(9999));
-        // ensure it's long enough; take rightmost 10 characters when possible
         String s = base.length() >= 10 ? base.substring(base.length() - 10) : String.format("%010d", Long.parseLong(base));
-        try {
-            return Long.parseLong(s);
-        } catch (NumberFormatException e) {
-            // fallback (should not normally happen)
-            return Math.abs(rand.nextLong()) % 1_000_000_0000L;
-        }
+        try { return Long.parseLong(s); } catch (NumberFormatException e) { return Math.abs(rand.nextLong()) % 1_000_000_0000L; }
     }
 
-    // Helper that centralises adding message to both object list and parallel arrays
     private void addMessageToMemory(Message m, boolean saveAfter) {
         sentMessages.add(m);
         messageIDs.add(m.getMessageID());
@@ -99,39 +83,35 @@ public class MessageClass {
         if (saveAfter) saveMessagesSafe();
     }
 
-    // Add message using a while loop (rubric requires while loop)
+    // While loop add
     public void addMessageWhileLoop() {
-        if (messagesSentCount >= messageLimit) {
-            JOptionPane.showMessageDialog(null, "Message limit reached.");
-            return;
-        }
+        if (messagesSentCount >= messageLimit) { JOptionPane.showMessageDialog(null, "Message limit reached."); return; }
         while (messagesSentCount < messageLimit) {
             String rec = JOptionPane.showInputDialog("Enter recipient number:");
-            if (rec == null) return; // user cancelled
-            if (!checkRecipientCell(rec)) { JOptionPane.showMessageDialog(null, "Invalid recipient number!"); continue; }
+            if (rec == null) return;
+            if (!checkRecipientCell(rec)) { JOptionPane.showMessageDialog(null, "Invalid recipient!"); continue; }
 
             String content = JOptionPane.showInputDialog("Enter message content:");
             if (content == null || content.trim().isEmpty()) { JOptionPane.showMessageDialog(null, "Message cannot be empty."); continue; }
 
             long id = generateTenDigitId();
-            int number = messagesSentCount + 1; // correct message number using counter
+            int number = messagesSentCount + 1;
             String hash = createMessageHash(id, number, content);
 
             Message m = new Message(id, number, rec, content, hash);
             addMessageToMemory(m, true);
 
             JOptionPane.showMessageDialog(null, "Message Added!\n" + m.toString());
-            break; // exit after adding one message (like user completes one entry)
+            break; // one message per loop
         }
     }
 
-    // Add a batch of messages using a for-loop (rubric requires a for loop too)
+    // For loop batch add
     public void addMessageForLoop(int batchCount) {
-        // batchCount is number of messages user wants to add in this run
         for (int i = 0; i < batchCount && messagesSentCount < messageLimit; i++) {
             String rec = JOptionPane.showInputDialog("(For-loop) Enter recipient number:");
             if (rec == null) return;
-            if (!checkRecipientCell(rec)) { JOptionPane.showMessageDialog(null, "Invalid recipient number!"); i--; continue; }
+            if (!checkRecipientCell(rec)) { JOptionPane.showMessageDialog(null, "Invalid recipient!"); i--; continue; }
 
             String content = JOptionPane.showInputDialog("(For-loop) Enter message content:");
             if (content == null || content.trim().isEmpty()) { JOptionPane.showMessageDialog(null, "Message cannot be empty."); i--; continue; }
@@ -160,19 +140,19 @@ public class MessageClass {
         JOptionPane.showMessageDialog(null, sb.toString());
     }
 
-    // Longest message (rubric)
+    // Longest message
     public void displayLongestMessage() {
         if (sentMessages.isEmpty()) { JOptionPane.showMessageDialog(null, "No messages sent."); return; }
         Message longest = sentMessages.get(0);
         for (Message m : sentMessages) if (m.getContent().length() > longest.getContent().length()) longest = m;
         JOptionPane.showMessageDialog(null,
                 "Longest Message:\nSender: " + sender +
-                "\nRecipient: " + longest.getRecipient() +
-                "\nMessage: " + longest.getContent() +
-                "\nCharacters: " + longest.getContent().length());
+                        "\nRecipient: " + longest.getRecipient() +
+                        "\nMessage: " + longest.getContent() +
+                        "\nCharacters: " + longest.getContent().length());
     }
 
-    // Search by message ID (rubric)
+    // Search by ID
     public void searchByMessageID() {
         String input = JOptionPane.showInputDialog("Enter Message ID to search:");
         if (input == null || input.isEmpty()) return;
@@ -182,16 +162,16 @@ public class MessageClass {
             if (m.getMessageID() == id) {
                 JOptionPane.showMessageDialog(null,
                         "Message Found:\nSender: " + sender +
-                        "\nRecipient: " + m.getRecipient() +
-                        "\nMessage: " + m.getContent() +
-                        "\nHash: " + m.getMessageHash());
+                                "\nRecipient: " + m.getRecipient() +
+                                "\nMessage: " + m.getContent() +
+                                "\nHash: " + m.getMessageHash());
                 return;
             }
         }
         JOptionPane.showMessageDialog(null, "Message ID not found.");
     }
 
-    // Search by recipient (rubric requires searching array for messages to a recipient)
+    // Search by recipient
     public void displayMessagesForRecipient() {
         String rec = JOptionPane.showInputDialog("Enter recipient number to search:");
         if (rec == null || rec.isEmpty()) return;
@@ -207,13 +187,16 @@ public class MessageClass {
         JOptionPane.showMessageDialog(null, sb.toString());
     }
 
-    // Delete by hash (rubric)
+    // Delete by hash
     public void deleteMessageByHash() {
         String hash = JOptionPane.showInputDialog("Enter message hash to delete:");
         if (hash == null || hash.isEmpty()) return;
         for (int i = 0; i < sentMessages.size(); i++) {
             if (sentMessages.get(i).getMessageHash().equals(hash)) {
-                // remove from objects and parallel arrays
+                // Move to disregardedMessages
+                disregardedMessages.add(sentMessages.get(i));
+
+                // Remove from objects and arrays
                 sentMessages.remove(i);
                 messageIDs.remove(i);
                 messageHashes.remove(i);
@@ -221,7 +204,7 @@ public class MessageClass {
                 recipients.remove(i);
                 contents.remove(i);
 
-                // fix message numbers: reassign to keep sequence (both objects and arrays)
+                // Reassign message numbers
                 for (int j = 0; j < sentMessages.size(); j++) {
                     Message old = sentMessages.get(j);
                     Message updated = new Message(old.getMessageID(), j + 1, old.getRecipient(), old.getContent(), old.getMessageHash());
@@ -237,7 +220,36 @@ public class MessageClass {
         JOptionPane.showMessageDialog(null, "Message hash not found.");
     }
 
-    // Full report (rubric)
+    // Restore deleted messages
+    public void restoreDeletedMessages() {
+        if (disregardedMessages.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No deleted messages to restore.");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Deleted Messages:\n\n");
+        for (int i = 0; i < disregardedMessages.size(); i++) {
+            Message m = disregardedMessages.get(i);
+            sb.append((i + 1)).append(". Recipient: ").append(m.getRecipient())
+              .append(" | Message: ").append(m.getContent())
+              .append(" | Hash: ").append(m.getMessageHash()).append("\n");
+        }
+        JOptionPane.showMessageDialog(null, sb.toString());
+
+        String input = JOptionPane.showInputDialog("Enter the number of the message to restore (or cancel):");
+        if (input == null || input.isEmpty()) return;
+        int index;
+        try { index = Integer.parseInt(input) - 1; if (index < 0 || index >= disregardedMessages.size()) { JOptionPane.showMessageDialog(null, "Invalid selection."); return; } }
+        catch (NumberFormatException e) { JOptionPane.showMessageDialog(null, "Invalid input."); return; }
+
+        Message restored = disregardedMessages.remove(index);
+        int number = sentMessages.size() + 1;
+        Message newMessage = new Message(restored.getMessageID(), number, restored.getRecipient(), restored.getContent(), restored.getMessageHash());
+        addMessageToMemory(newMessage, true);
+
+        JOptionPane.showMessageDialog(null, "Message restored successfully!");
+    }
+
+    // Full report
     public void displayReport() {
         if (sentMessages.isEmpty()) { JOptionPane.showMessageDialog(null, "No messages sent."); return; }
         StringBuilder sb = new StringBuilder("FULL REPORT OF SENT MESSAGES:\n\n");
@@ -252,23 +264,28 @@ public class MessageClass {
         JOptionPane.showMessageDialog(null, sb.toString());
     }
 
-    // Save messages safely (called after changes)
     private void saveMessagesSafe() {
-        try {
-            storage.saveMessages(sentMessages);
-        } catch (IOException e) {
-            // For first-year project we simply ignore storage errors but could log them.
-        }
+        try { storage.saveMessages(sentMessages); } catch (IOException e) { /* ignore */ }
     }
 
     // Start menu
     public void startMenu() {
-        String menu = "1. Add Message (while loop)\n2. Add Messages (for loop batch)\n3. Display All Sent Messages\n4. Display Longest Message\n5. Search by Message ID\n6. Search by Recipient\n7. Delete Message by Hash\n8. Display Full Report\n9. Exit";
+        String menu = "1. Add Message (while loop)\n"
+                    + "2. Add Messages (for loop batch)\n"
+                    + "3. Display All Sent Messages\n"
+                    + "4. Display Longest Message\n"
+                    + "5. Search by Message ID\n"
+                    + "6. Search by Recipient\n"
+                    + "7. Delete Message by Hash\n"
+                    + "8. Restore Deleted Message\n"
+                    + "9. Display Full Report\n"
+                    + "10. Exit";
         while (true) {
             String input = JOptionPane.showInputDialog(menu);
             if (input == null) return;
             int choice;
             try { choice = Integer.parseInt(input); } catch (NumberFormatException e) { JOptionPane.showMessageDialog(null, "Enter a valid number."); continue; }
+
             switch (choice) {
                 case 1 -> addMessageWhileLoop();
                 case 2 -> {
@@ -280,8 +297,9 @@ public class MessageClass {
                 case 5 -> searchByMessageID();
                 case 6 -> displayMessagesForRecipient();
                 case 7 -> deleteMessageByHash();
-                case 8 -> displayReport();
-                case 9 -> { JOptionPane.showMessageDialog(null, "Goodbye!"); saveMessagesSafe(); return; }
+                case 8 -> restoreDeletedMessages();
+                case 9 -> displayReport();
+                case 10 -> { JOptionPane.showMessageDialog(null, "Goodbye!"); saveMessagesSafe(); return; }
                 default -> JOptionPane.showMessageDialog(null, "Invalid option.");
             }
         }

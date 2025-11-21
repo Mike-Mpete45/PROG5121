@@ -19,17 +19,14 @@ public class MikeChatApp {
 
    JOptionPane.showMessageDialog(null, "Welcome to QuickChat!");
 
-        // Ask user for full name (optional)
         String fullName = JOptionPane.showInputDialog(null, "Please enter your Name & Surname:");
 
-        // Create register and run registration/login
         Register reg = new Register();
         reg.registerUser();
         if (!reg.loginUser()) return;
 
-        // Start messaging system for verified user
         MessageClass mc = new MessageClass(reg.getVerifiedUser());
-        mc.setMessageLimit(20); // rubric requires a message limit
+        mc.setMessageLimit(20); // max messages
         mc.startMenu();
     }
 }

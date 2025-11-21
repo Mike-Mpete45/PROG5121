@@ -11,49 +11,42 @@ import javax.swing.JOptionPane;
  * @author Mothabeleng
  */
 public class Register {
-    private String verifiedUser;
+   private String verifiedUser;
     private String verifiedPassword;
     private String verifiedNumber;
 
     public boolean checkUserName(String username) {
         if (username == null) return false;
-        // must contain underscore and be <= 5 characters (rubric)
         return username.contains("_") && username.length() <= 5;
     }
 
     public boolean checkPasswordComplexity(String password) {
         if (password == null) return false;
-        // at least one digit, lower, upper, special char, min 8
         return password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*_+=-]).{8,}$");
     }
 
     public boolean checkCellPhoneNumber(String cellphone) {
         if (cellphone == null) return false;
-        // South African format +27xxxxxxxxx or 0xxxxxxxxx starting 6-8
         return cellphone.matches("^(\\+27|0)[6-8][0-9]{8}$");
     }
 
     public void registerUser() {
         String userName, password, cell;
 
-        do {
-            userName = JOptionPane.showInputDialog(
-                    "Enter username:\n- Must contain '_'\n- Max 5 characters");
+        do { userName = JOptionPane.showInputDialog(
+                "Enter username:\n- Must contain '_'\n- Max 5 characters"); 
         } while (!checkUserName(userName));
 
-        do {
-            password = JOptionPane.showInputDialog(
-                    "Enter password:\n- Min 8 chars\n- Upper, lower, digit and special char");
+        do { password = JOptionPane.showInputDialog(
+                "Enter password:\n- Min 8 chars\n- Upper, lower, digit and special char"); 
         } while (!checkPasswordComplexity(password));
 
-        do {
-            cell = JOptionPane.showInputDialog("Enter cellphone number (start +27 or 0):");
+        do { cell = JOptionPane.showInputDialog("Enter cellphone number (start +27 or 0):"); 
         } while (!checkCellPhoneNumber(cell));
 
         verifiedUser = userName;
         verifiedPassword = password;
         verifiedNumber = cell;
-
         JOptionPane.showMessageDialog(null, "Registration Successful!");
     }
 
@@ -70,12 +63,9 @@ public class Register {
             JOptionPane.showMessageDialog(null, "Login Successful! Welcome " + verifiedUser + "!");
             return true;
         }
-
         JOptionPane.showMessageDialog(null, "Incorrect username or password.");
         return false;
     }
 
-    public String getVerifiedUser() {
-        return verifiedUser;
-    }
+    public String getVerifiedUser() { return verifiedUser; }
 }
