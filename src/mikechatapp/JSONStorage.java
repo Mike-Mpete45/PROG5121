@@ -1,0 +1,102 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package mikechatapp;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+
+/**
+ *
+ * @author Mothabeleng
+ */
+public class JSONStorage {
+private File file;
+
+    public JSONStorage(String filePath) {
+        this.file = new File(filePath);
+    }
+
+    // Save array of messages into a simple JSON array format
+    public void saveMessages(ArrayList<Message> messages) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < messages.size(); i++) {
+            Message m = messages.get(i);
+            sb.append("{");
+            sb.append("\"messageID\":").append(m.getMessageID()).append(",");
+            sb.append("\"messageNumber\":").append(m.getMessageNumber()).append(",");
+            sb.append("\"recipient\":\"").append(escape(m.getRecipient())).append("\",");
+            sb.append("\"content\":\"").append(escape(m.getContent())).append("\",");
+            sb.append("\"messageHash\":\"").append(escape(m.getMessageHash())).append("\"");
+            sb.append("}");
+            if (i < messages.size() - 1) sb.append(",");
+        }
+        sb.append("]");
+
+        try (FileWriter fw = new FileWriter(file)) {
+            fw.write(sb.toString());
+        }
+    }
+
+    // A minimal parser that returns an empty list if file missing or malformed.
+    public ArrayList<Message> loadMessages() {
+        ArrayList<Message> result = new ArrayList<>();
+        try {
+            if (!file.exists()) return result;
+            String text = Files.readString(file.toPath()).trim();
+            if (!text.startsWith("[") || !text.endsWith("]")) return result;
+            // Very naive parser: split objects by '},{' sequence
+            String body = text.substring(1, text.length() - 1).trim();
+            if (body.isEmpty()) return result;
+            String[] objs = body.split("\\},\\{");
+            for (String obj : objs) {
+                String o = obj;
+                if (!o.startsWith("{")) o = "{" + o;
+                if (!o.endsWith("}")) o = o + "}";
+                long id = readLong(o, "messageID");
+                int number = (int) readLong(o, "messageNumber");
+                String recipient = readString(o, "recipient");
+                String content = readString(o, "content");
+                String hash = readString(o, "messageHash");
+                result.add(new Message(id, number, recipient, content, hash));
+            }
+        } catch (Exception e) {
+            // If any error, return empty list (safe for first-year project)
+            return new ArrayList<>();
+        }
+        return result;
+    }
+
+    private static String escape(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+    }
+
+    private static long readLong(String obj, String key) {
+        try {
+            int idx = obj.indexOf('\"' + key + '\"');
+            if (idx < 0) return 0;
+            int colon = obj.indexOf(':', idx);
+            int comma = obj.indexOf(',', colon);
+            int end = comma < 0 ? obj.indexOf('}', colon) : comma;
+            String num = obj.substring(colon + 1, end).trim();
+            return Long.parseLong(num);
+        } catch (Exception e) { return 0; }
+    }
+
+    private static String readString(String obj, String key) {
+        try {
+            int idx = obj.indexOf('\"' + key + '\"');
+            if (idx < 0) return "";
+            int colon = obj.indexOf(':', idx);
+            int firstQuote = obj.indexOf('\"', colon + 1);
+            int secondQuote = obj.indexOf('\"', firstQuote + 1);
+            String raw = obj.substring(firstQuote + 1, secondQuote);
+            return raw.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+        } catch (Exception e) { return ""; }
+    }
+}
