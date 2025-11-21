@@ -11,22 +11,25 @@ import javax.swing.JOptionPane;
  * @author Mothabeleng
  */
 public class Register {
-   private String verifiedUser;
+    private String verifiedUser;
     private String verifiedPassword;
     private String verifiedNumber;
 
     public boolean checkUserName(String username) {
         if (username == null) return false;
+        // must contain underscore and be <= 5 characters (rubric)
         return username.contains("_") && username.length() <= 5;
     }
 
     public boolean checkPasswordComplexity(String password) {
         if (password == null) return false;
+        // at least one digit, lower, upper, special char, min 8
         return password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*_+=-]).{8,}$");
     }
 
     public boolean checkCellPhoneNumber(String cellphone) {
         if (cellphone == null) return false;
+        // South African format +27xxxxxxxxx or 0xxxxxxxxx starting 6-8
         return cellphone.matches("^(\\+27|0)[6-8][0-9]{8}$");
     }
 

@@ -9,7 +9,7 @@ package mikechatapp;
  * @author Mothabeleng
  */
 public class Message {
- private long messageID;
+  private long messageID;
     private String messageHash;
     private int messageNumber;
     private String recipient;

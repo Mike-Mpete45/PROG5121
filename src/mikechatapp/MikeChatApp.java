@@ -17,7 +17,7 @@ public class MikeChatApp {
      */
      public static void main(String[] args) {
 
-      JOptionPane.showMessageDialog(null, "Welcome to QuickChat!");
+   JOptionPane.showMessageDialog(null, "Welcome to QuickChat!");
 
         // Ask user for full name (optional)
         String fullName = JOptionPane.showInputDialog(null, "Please enter your Name & Surname:");
